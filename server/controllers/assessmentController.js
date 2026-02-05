@@ -207,11 +207,74 @@ const duplicateAssessment = async (req, res) => {
   }
 };
 
+const importQuestions = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { questions } = req.body;
+
+    if (!questions || !Array.isArray(questions)) {
+      return res.status(400).json({ error: 'Questions array is required' });
+    }
+
+    const assessment = await Assessment.findOne({ slug });
+    if (!assessment) {
+      return res.status(404).json({ error: 'Assessment not found' });
+    }
+
+    // Validate user owns the assessment
+    if (assessment.user_id.toString() !== req.user.userId.toString()) {
+      return res.status(403).json({ error: 'You do not have permission to modify this assessment' });
+    }
+
+    // Transform imported questions to match schema
+    const importedQuestions = questions.map((q, index) => {
+      // Use question_order as id if provided, otherwise use index + 1
+      const questionId = q.id || q.question_order || (index + 1);
+      
+      return {
+        id: questionId,
+        type: q.type || q.question_type,
+        question: q.question || q.question_text,
+        voiceScript: q.voiceScript || q.voice_script || '',
+        options: q.options || [],
+        audio: q.audio || ''
+      };
+    });
+
+    // Merge with existing questions or replace
+    // If questions have order numbers, we'll merge/replace by order
+    const existingQuestions = assessment.questions || [];
+    const questionsMap = new Map();
+    
+    // Add existing questions to map
+    existingQuestions.forEach(q => {
+      questionsMap.set(q.id, q);
+    });
+
+    // Update/add imported questions
+    importedQuestions.forEach(q => {
+      questionsMap.set(q.id, q);
+    });
+
+    // Convert map back to array and sort by id
+    assessment.questions = Array.from(questionsMap.values()).sort((a, b) => a.id - b.id);
+
+    const updatedAssessment = await assessment.save();
+    res.json({
+      message: `Successfully imported ${questions.length} question(s)`,
+      assessment: updatedAssessment
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getAllAssessments,
   getAssessmentBySlug,
   createAssessment,
   updateAssessment,
   deleteAssessment,
-  duplicateAssessment
+  duplicateAssessment,
+  importQuestions
 };

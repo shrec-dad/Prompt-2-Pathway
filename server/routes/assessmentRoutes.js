@@ -35,5 +35,6 @@ router.put(
 
 router.delete("/:id", authenticate, authorize(["client_admin"]), controller.deleteAssessment);
 router.post("/:id/duplicate", authenticate, authorize(["client_admin"]), controller.duplicateAssessment);
+router.post("/:slug/import-questions", authenticate, authorize(["client_admin"]), controller.importQuestions);
 
 module.exports = router;

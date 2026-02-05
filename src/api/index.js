@@ -36,6 +36,7 @@ export const updateAssessmentAPI = (id, data) =>
   API.put(`/assessments/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const deleteAssessmentAPI = (id) => API.delete(`/assessments/${id}`);
 export const duplicateAssessmentAPI = (id) => API.post(`/assessments/${id}/duplicate`);
+export const importQuestionsAPI = (slug, questions) => API.post(`/assessments/${slug}/import-questions`, { questions });
 
 // ------- Leads -------
 export const getLeadsAPI = () => API.get('/leads');

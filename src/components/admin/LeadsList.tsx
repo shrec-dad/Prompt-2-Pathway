@@ -80,7 +80,7 @@ export const LeadsList = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Name,Email,Phone,Assessment,Score,Status,Date\n" +
       filteredLeads.map(lead => 
-        `"${lead.firstName} ${lead.lastName}","${lead.email}","${lead.phone}","${lead.assessment}","${lead.score}","${lead.status}","${lead.completedAt}"`
+        `"${lead.firstName} ${lead.lastName}","${lead.email}","${lead.phone || ''}","${lead.assessment?.title || '—'}","${lead.score}","${lead.status}","${lead.completedAt || ''}"`
       ).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -209,7 +209,7 @@ export const LeadsList = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-bold text-gray-900">{lead.assessment.title}</div>
+                      <div className="font-bold text-gray-900">{lead.assessment?.title ?? '—'}</div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -227,7 +227,7 @@ export const LeadsList = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm font-semibold text-gray-700">{lead.completedAt.slice(0, 10)}</div>
+                    <div className="text-sm font-semibold text-gray-700">{lead.completedAt ? lead.completedAt.slice(0, 10) : '—'}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">

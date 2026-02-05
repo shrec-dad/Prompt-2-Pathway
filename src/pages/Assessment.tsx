@@ -182,20 +182,20 @@ const Assessment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/50 to-purple-50/50" style={ backgroundStyle }>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-purple-100" style={ backgroundStyle }>
       <div className="container mx-auto px-4 py-4 sm:py-8">
         {loading ? (
           <div className="flex justify-center items-center min-h-[400px]">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your assessment...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-700 font-medium">Loading your assessment...</p>
             </div>
           </div>
         ) : !assessment ? (
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Assessment Not Found</h1>
-            <p className="text-gray-600 mb-8">The assessment you're looking for doesn't exist.</p>
-            <Button onClick={() => navigate('/')}>
+            <p className="text-gray-700 mb-8 font-medium">The assessment you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate('/')} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md">
               Return to Home
             </Button>
           </div>
@@ -209,15 +209,15 @@ const Assessment = () => {
           <div className="space-y-4 sm:space-y-6">
             {/* Progress Bar - Compact Mobile Design */}
             <div className="max-w-5xl mx-auto">
-              <div className="bg-gray-200 rounded-full h-2 mb-2 sm:mb-4 shadow-inner">
+              <div className="bg-gray-300 rounded-full h-3 mb-2 sm:mb-4 shadow-inner border border-gray-400">
                 <div
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500 shadow-lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-500 shadow-lg"
                   style={{ width: `${((currentQuestionIndex + 1) / assessment.questions.length) * 100}%` }}
                 ></div>
               </div>
-              <div className="flex justify-between items-center text-xs text-gray-600 px-1">
-                <span className="font-medium">Question {currentQuestionIndex + 1} of {assessment.questions.length}</span>
-                <span className="font-medium">{Math.round(((currentQuestionIndex + 1) / assessment.questions.length) * 100)}%</span>
+              <div className="flex justify-between items-center text-sm text-gray-700 px-1">
+                <span className="font-semibold">Question {currentQuestionIndex + 1} of {assessment.questions.length}</span>
+                <span className="font-semibold">{Math.round(((currentQuestionIndex + 1) / assessment.questions.length) * 100)}%</span>
               </div>
             </div>
 
@@ -243,7 +243,7 @@ const Assessment = () => {
                   setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1));
                 }}
                 disabled={currentQuestionIndex === 0}
-                className="flex items-center justify-center px-4 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-gray-300 hover:border-blue-400 w-full sm:w-auto"
+                className="flex items-center justify-center px-4 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border-2 border-gray-400 hover:border-blue-500 bg-white hover:bg-gray-50 text-gray-700 font-semibold w-full sm:w-auto"
               >
                 <ChevronLeft className="h-4 w-4 mr-2" />
                 Previous
@@ -252,7 +252,7 @@ const Assessment = () => {
               <Button
                 onClick={handleNextQuestion}
                 disabled={!isAnswered}
-                className="flex items-center justify-center px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold w-full sm:w-auto"
+                className="flex items-center justify-center px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold w-full sm:w-auto"
               >
                 {currentQuestionIndex === assessment.questions.length - 1 ? 'Complete' : 'Next'}
                 <ChevronRight className="h-4 w-4 ml-2" />
@@ -262,8 +262,8 @@ const Assessment = () => {
         ) : (
           <div className="text-center py-12">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Assessment Complete!</h1>
-            <p className="text-gray-600 mb-8">Calculating your results...</p>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-700 mb-8 font-medium">Calculating your results...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto"></div>
           </div>
         )}
       </div>

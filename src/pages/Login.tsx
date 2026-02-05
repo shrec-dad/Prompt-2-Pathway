@@ -56,24 +56,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
-      <Card className="w-full max-w-md shadow-lg rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-200 via-blue-200 to-indigo-200 px-4">
+      <Card className="w-full max-w-md shadow-2xl rounded-2xl border-2 border-blue-300 bg-white">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-2xl">
+          <CardTitle className="text-2xl font-bold text-center">
             Login
           </CardTitle>
-          <p className="text-center text-gray-600">
+          <p className="text-center text-blue-100">
             Sign in to access Prompt 2 Pathway
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
               <Input
                 type="email"
                 placeholder="Email"
-                className="pl-10"
+                className="pl-10 border-2 border-gray-300 focus:border-blue-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -81,11 +81,11 @@ const Login = () => {
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
               <Input
                 type="password"
                 placeholder="Password"
-                className="pl-10"
+                className="pl-10 border-2 border-gray-300 focus:border-blue-500"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -94,15 +94,15 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg"
               disabled={loading}
             >
               {loading ? "Logging in..." : "Login"}
             </Button>
 
-            <p className="text-center text-gray-600 text-sm mt-2">
+            <p className="text-center text-gray-700 text-sm mt-2 font-medium">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-blue-600 hover:underline">
+              <Link to="/signup" className="text-blue-700 hover:text-blue-800 font-semibold underline">
                 Sign up
               </Link>
             </p>

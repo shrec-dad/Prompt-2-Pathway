@@ -403,7 +403,7 @@ export const AssessmentEditor = ({ mode }: AssessmentEditorProps) => {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6 my-4">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Questions ({assessment.questions.length})</h3>
             <Button onClick={addQuestion}>

@@ -70,8 +70,8 @@ export const AssessmentsList = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-				<h3 className="text-lg font-semibold">Available Assessments</h3>
-				<Button onClick={handleCreate} className="flex items-center">
+				<h3 className="text-2xl font-bold text-gray-900">Available Assessments</h3>
+				<Button onClick={handleCreate} className="flex items-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
 					<Plus className="h-4 w-4 mr-2" />
 					Create New
 				</Button>
@@ -79,7 +79,7 @@ export const AssessmentsList = () => {
 			
 			<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{list.map((assessment) => (
-					<Card key={assessment._id} className="overflow-hidden">
+					<Card key={assessment._id} className="overflow-hidden border-2 border-gray-300 shadow-lg hover:shadow-xl transition-shadow bg-white">
 						{assessment.image && (
 							<div className="h-48 overflow-hidden">
 								<img 
@@ -92,27 +92,27 @@ export const AssessmentsList = () => {
 						<div className="p-6">
 							<div className="flex items-start justify-between mb-4">
 								<div className="flex-1">
-									<h4 className="font-semibold text-lg mb-2">{assessment.title}</h4>
-									<p className="text-sm text-gray-600 mb-3">{assessment.description}</p>
+									<h4 className="font-bold text-lg mb-2 text-gray-900">{assessment.title}</h4>
+									<p className="text-sm text-gray-700 mb-3">{assessment.description}</p>
 									
 									<div className="flex flex-wrap gap-1 mb-3">
-										<Badge variant={assessment.audience === 'business' ? 'default' : 'secondary'}>
+										<Badge variant={assessment.audience === 'business' ? 'default' : 'secondary'} className="font-semibold">
 											{assessment.audience}
 										</Badge>
 										{assessment.tags.map((tag, index) => (
-											<Badge key={index} variant="outline" className="text-xs">
+											<Badge key={index} variant="outline" className="text-xs border-gray-400 text-gray-700">
 												{tag}
 											</Badge>
 										))}
 									</div>
 									
-									<p className="text-xs text-gray-500 mb-4">
+									<p className="text-xs text-gray-600 mb-4 font-medium">
 										{assessment.questions.length} questions • Est. {Math.ceil(assessment.questions.length * 0.75)} min
 									</p>
 									
-									<div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-										<p className="text-sm font-medium text-blue-900 mb-1">Public Link:</p>
-										<code className="text-xs bg-white px-2 py-1 rounded border block w-full text-gray-700 break-all">
+									<div className="bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 p-3 rounded-lg mb-4">
+										<p className="text-sm font-bold text-blue-900 mb-1">Public Link:</p>
+										<code className="text-xs bg-white px-2 py-1 rounded border-2 border-blue-200 block w-full text-gray-800 break-all font-mono">
 											{window.location.origin}/assessment/{assessment.slug}
 										</code>
 									</div>
@@ -123,7 +123,7 @@ export const AssessmentsList = () => {
 								<Button 
 									size="sm"
 									onClick={() => copyAssessmentLink(assessment)}
-									className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1"
+									className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 shadow-md font-semibold"
 								>
 									<Link className="h-3 w-3" />
 									Copy URL
@@ -132,6 +132,7 @@ export const AssessmentsList = () => {
 									variant="outline" 
 									size="sm"
 									onClick={() => handleEdit(assessment)}
+									className="border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 font-semibold"
 								>
 									<Edit className="h-3 w-3 mr-1" />
 									Edit
@@ -140,6 +141,7 @@ export const AssessmentsList = () => {
 									variant="outline" 
 									size="sm"
 									onClick={() => handleDuplicate(assessment)}
+									className="border-2 border-gray-400 hover:border-purple-500 hover:bg-purple-50 font-semibold"
 								>
 									<Copy className="h-3 w-3 mr-1" />
 									Duplicate
@@ -148,7 +150,7 @@ export const AssessmentsList = () => {
 									variant="outline" 
 									size="sm"
 									onClick={() => handleDelete(assessment._id)}
-									className="text-red-600 hover:text-red-700"
+									className="text-red-700 hover:text-white hover:bg-red-600 border-2 border-red-400 hover:border-red-600 font-semibold"
 								>
 									<Trash2 className="h-3 w-3" />
 								</Button>

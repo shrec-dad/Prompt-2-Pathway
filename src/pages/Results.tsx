@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, Star, Calendar, ExternalLink } from 'lucide-react';
 import { VoicePlayer } from '@/components/VoicePlayer';
-import { useToast } from "@/hooks/use-toast";
 import { CelebrationEffects } from '@/components/CelebrationEffects';
-import { useSettings } from '../SettingsContext';
 
 interface AssessmentResult {
   overallScore: number;
@@ -21,10 +19,8 @@ interface AssessmentTemplate {
 }
 
 const Results = () => {
-  const { settings } = useSettings();
-  const navigate = useNavigate();
+
   const location = useLocation();
-  const { toast } = useToast();
   const [results, setResults] = useState<AssessmentResult | null>(null);
   const [ bookingLink, setBookingLink] = useState<string>('');
   const [assessment, setAssessment] = useState<AssessmentTemplate | null>(null);
@@ -62,14 +58,28 @@ const Results = () => {
   }, [location.state?.assessment]);
 
   const handleCelebrationComplete = () => {
-    console.log('Celebration completed, showing voice player');
-    setShowCelebration(false);
-    // Longer delay to ensure celebration audio stops completely
+    console.log('Celebration effects finished, showing and playing audio');
+    // Celebration effects are done, now show and play audio (same pattern as ContactForm)
     setTimeout(() => {
-      console.log('Setting showVoicePlayer to true for auto-play');
       setShowVoicePlayer(true);
-    }, 100); // Ensure no overlap
+    }, 300);
   };
+
+  // Hide celebration effects after message audio has had time to play (approximately 30 seconds)
+  useEffect(() => {
+    if (showVoicePlayer && showCelebration) {
+      // Set a timeout to hide celebration effects after message audio completes
+      // Most message audio should be done within 30 seconds
+      const hideCelebrationTimer = setTimeout(() => {
+        console.log('Hiding celebration effects after message audio');
+        setShowCelebration(false);
+      }, 35000); // 30 seconds for audio + 5 second buffer
+
+      return () => {
+        clearTimeout(hideCelebrationTimer);
+      };
+    }
+  }, [showVoicePlayer, showCelebration]);
 
   const handleScheduleCall = () => {
     // Direct link to TidyCal - opens in new tab
@@ -91,6 +101,7 @@ const Results = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-purple-100">
+      {/* Show celebration effects during both celebration audio and message audio */}
       {showCelebration && <CelebrationEffects onComplete={handleCelebrationComplete} />}
       
       <div className="container mx-auto px-4 py-6 sm:py-8">
@@ -112,7 +123,7 @@ const Results = () => {
             </p>
           </div>
 
-          {/* Voice Player */}
+          {/* Voice Player - shows and plays after celebration effects finish */}
           {showVoicePlayer && (
             <VoicePlayer
               text={voiceScript}

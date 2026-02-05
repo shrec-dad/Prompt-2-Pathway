@@ -1,8 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
 import { Sparkles, Star, Heart } from 'lucide-react';
-import { customVoiceService } from '@/services/customVoiceService';
-import { RootState } from '@/store';
 
 interface CelebrationEffectsProps {
   onComplete?: () => void;
@@ -13,7 +10,7 @@ interface CelebrationEffectsProps {
 export const CelebrationEffects = ({ onComplete, minDisplayMs = 3000 }: CelebrationEffectsProps) => {
   const [showEffects, setShowEffects] = useState(true);
   const playedRef = useRef(false);
-  const assessment = useSelector((state: RootState) => state.assessments.selected);
+  const celebrationAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (playedRef.current) return;
@@ -24,27 +21,46 @@ export const CelebrationEffects = ({ onComplete, minDisplayMs = 3000 }: Celebrat
       onComplete?.();
     };
 
-    const playCongratulations = async () => {
-      if (assessment) customVoiceService.setAssessment(assessment);
-      const hasVoice = assessment && await customVoiceService.checkVoiceExists('congratulations');
-      if (!hasVoice) {
-        setTimeout(finish, minDisplayMs);
-        return;
-      }
-      try {
-        await customVoiceService.playVoice(
-          'congratulations',
-          undefined,
-          undefined,
-          finish
-        );
-      } catch {
-        setTimeout(finish, minDisplayMs);
-      }
+    const playCelebrationAudio = () => {
+      // Play celebration-audio.mp3 from public folder
+      const celebrationAudio = new Audio('/assets/celebration-audio.mp3');
+      celebrationAudioRef.current = celebrationAudio;
+
+      const handleCelebrationEnded = () => {
+        console.log('Celebration audio finished');
+        // Celebration audio is done, call onComplete to trigger message audio
+        finish();
+      };
+
+      const handleCelebrationError = (e: Event) => {
+        console.warn('Failed to load celebration audio:', e);
+        // If celebration audio fails, still proceed
+        finish();
+      };
+
+      celebrationAudio.addEventListener('ended', handleCelebrationEnded);
+      celebrationAudio.addEventListener('error', handleCelebrationError);
+
+      // Play celebration audio
+      celebrationAudio.play().catch((error) => {
+        console.warn('Failed to play celebration audio (may require user interaction):', error);
+        // If autoplay fails, still proceed
+        finish();
+      });
     };
 
-    playCongratulations();
-  }, [assessment, onComplete, minDisplayMs]);
+    // Start with celebration audio
+    playCelebrationAudio();
+
+    // Cleanup function
+    return () => {
+      if (celebrationAudioRef.current) {
+        celebrationAudioRef.current.pause();
+        celebrationAudioRef.current.src = '';
+        celebrationAudioRef.current = null;
+      }
+    };
+  }, [onComplete, minDisplayMs]);
 
   if (!showEffects) return null;
 

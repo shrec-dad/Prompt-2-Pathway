@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Copy, Trash2, Link, Upload, FileSpreadsheet } from 'lucide-react';
 import { RootState, AppDispatch } from '@/store';
 import { getImageSrc } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 import {
   Dialog,
   DialogContent,
@@ -86,10 +87,18 @@ export const AssessmentsList = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      const fileName = file.name.toLowerCase();
+      const isValidCSV = file.type === 'text/csv' || fileName.endsWith('.csv');
+      const isValidExcel = 
+        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.type === 'application/vnd.ms-excel' ||
+        fileName.endsWith('.xlsx') ||
+        fileName.endsWith('.xls');
+      
+      if (!isValidCSV && !isValidExcel) {
         toast({
           title: 'Invalid File',
-          description: 'Please select a CSV file',
+          description: 'Please select a CSV or Excel file (.csv, .xlsx, .xls)',
           variant: 'destructive',
         });
         return;
@@ -149,6 +158,59 @@ export const AssessmentsList = () => {
     }
     
     return rows;
+  };
+
+  const parseExcel = async (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          
+          // Get the first sheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to JSON with header row
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            defval: '',
+            raw: false
+          }) as any[][];
+          
+          if (jsonData.length === 0) {
+            resolve([]);
+            return;
+          }
+          
+          // First row is headers
+          const headers = jsonData[0].map((h: any) => String(h).trim().toLowerCase());
+          
+          // Convert to object array
+          const rows: any[] = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row: any = {};
+            headers.forEach((header, index) => {
+              const value = jsonData[i][index];
+              row[header] = value !== undefined && value !== null ? String(value).trim() : '';
+            });
+            rows.push(row);
+          }
+          
+          resolve(rows);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Failed to read Excel file'));
+      };
+      
+      reader.readAsBinaryString(file);
+    });
   };
 
   const transformCSVToQuestions = (csvRows: any[], assessmentSlug: string): any[] => {
@@ -241,7 +303,7 @@ export const AssessmentsList = () => {
     if (!selectedFile) {
       toast({
         title: 'No File Selected',
-        description: 'Please select a CSV file to import',
+        description: 'Please select a CSV or Excel file to import',
         variant: 'destructive',
       });
       return;
@@ -258,17 +320,25 @@ export const AssessmentsList = () => {
 
     setImporting(true);
     try {
-      const fileText = await selectedFile.text();
-      const csvRows = parseCSV(fileText);
+      const fileName = selectedFile.name.toLowerCase();
+      const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
       
-      if (csvRows.length === 0) {
-        throw new Error('CSV file is empty or invalid');
+      let rows: any[];
+      if (isExcel) {
+        rows = await parseExcel(selectedFile);
+      } else {
+        const fileText = await selectedFile.text();
+        rows = parseCSV(fileText);
+      }
+      
+      if (rows.length === 0) {
+        throw new Error('File is empty or invalid');
       }
 
-      const questions = transformCSVToQuestions(csvRows, selectedAssessmentSlug);
+      const questions = transformCSVToQuestions(rows, selectedAssessmentSlug);
       
       if (questions.length === 0) {
-        throw new Error('No valid questions found in CSV');
+        throw new Error('No valid questions found in file');
       }
 
       // Import questions for the selected assessment
@@ -285,7 +355,7 @@ export const AssessmentsList = () => {
     } catch (err: any) {
       toast({
         title: 'Import Failed',
-        description: err.message || 'Failed to import questions from CSV file',
+        description: err.message || 'Failed to import questions from file',
         variant: 'destructive',
       });
     } finally {
@@ -321,10 +391,10 @@ export const AssessmentsList = () => {
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<FileSpreadsheet className="h-5 w-5" />
-							Import Questions from CSV
+							Import Questions from CSV/Excel
 						</DialogTitle>
 						<DialogDescription>
-							Select an assessment and upload a CSV file to import questions.
+							Select an assessment and upload a CSV or Excel file (.csv, .xlsx, .xls) to import questions.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
@@ -347,11 +417,11 @@ export const AssessmentsList = () => {
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-2">
-								Select CSV File
+								Select CSV or Excel File
 							</label>
 							<input
 								type="file"
-								accept=".csv"
+								accept=".csv,.xlsx,.xls"
 								onChange={handleFileSelect}
 								className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
 							/>
@@ -362,7 +432,7 @@ export const AssessmentsList = () => {
 							)}
 						</div>
 						<div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
-							<p className="text-xs text-blue-900 font-semibold mb-1">CSV Format:</p>
+							<p className="text-xs text-blue-900 font-semibold mb-1">File Format (CSV or Excel):</p>
 							<ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
 								<li>question_order: Order number (1, 2, 3...)</li>
 								<li>question_text: The question text</li>

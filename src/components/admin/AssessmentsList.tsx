@@ -17,6 +17,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   fetchAssessments,
   duplicateAssessment,
   removeAssessment,
@@ -32,6 +39,7 @@ export const AssessmentsList = () => {
   const { toast } = useToast();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedAssessmentSlug, setSelectedAssessmentSlug] = useState<string>('');
   const [importing, setImporting] = useState(false);
 
 	// Fetch assessments on mount
@@ -143,17 +151,10 @@ export const AssessmentsList = () => {
     return rows;
   };
 
-  const transformCSVToQuestions = (csvRows: any[]): any[] => {
-    const questionsMap = new Map<string, any>();
+  const transformCSVToQuestions = (csvRows: any[], assessmentSlug: string): any[] => {
+    const questions: any[] = [];
     
     csvRows.forEach((row) => {
-      // Handle case-insensitive column names
-      const slug = (row.assessment_slug || row['assessment slug'])?.trim();
-      if (!slug) {
-        console.warn('Skipping row with missing assessment_slug:', row);
-        return;
-      }
-
       const questionOrder = parseInt(row.question_order || row['question order'] || '0');
       if (!questionOrder || isNaN(questionOrder)) {
         console.warn('Skipping row with invalid question_order:', row);
@@ -223,35 +224,17 @@ export const AssessmentsList = () => {
         console.log('Found option columns but no values:', Object.keys(row).filter(k => k.toLowerCase().startsWith('option')));
       }
 
-      const key = `${slug}_${questionOrder}`;
-      if (!questionsMap.has(key)) {
-        questionsMap.set(key, {
-          assessmentSlug: slug,
-          question: {
-            id: questionOrder,
-            type: questionType,
-            question: questionText,
-            voiceScript: voiceScript,
-            options: options.length > 0 ? options : [],
-          }
-        });
-      }
+      questions.push({
+        id: questionOrder,
+        type: questionType,
+        question: questionText,
+        voiceScript: voiceScript,
+        options: options.length > 0 ? options : [],
+      });
     });
 
-    // Group by assessment slug
-    const groupedBySlug = new Map<string, any[]>();
-    questionsMap.forEach((value) => {
-      const slug = value.assessmentSlug;
-      if (!groupedBySlug.has(slug)) {
-        groupedBySlug.set(slug, []);
-      }
-      groupedBySlug.get(slug)!.push(value.question);
-    });
-
-    return Array.from(groupedBySlug.entries()).map(([slug, questions]) => ({
-      slug,
-      questions: questions.sort((a, b) => a.id - b.id)
-    }));
+    // Sort by question order
+    return questions.sort((a, b) => a.id - b.id);
   };
 
   const handleImport = async () => {
@@ -259,6 +242,15 @@ export const AssessmentsList = () => {
       toast({
         title: 'No File Selected',
         description: 'Please select a CSV file to import',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!selectedAssessmentSlug) {
+      toast({
+        title: 'No Assessment Selected',
+        description: 'Please select an assessment to import questions into',
         variant: 'destructive',
       });
       return;
@@ -273,37 +265,23 @@ export const AssessmentsList = () => {
         throw new Error('CSV file is empty or invalid');
       }
 
-      const questionsData = transformCSVToQuestions(csvRows);
+      const questions = transformCSVToQuestions(csvRows, selectedAssessmentSlug);
       
-      if (questionsData.length === 0) {
+      if (questions.length === 0) {
         throw new Error('No valid questions found in CSV');
       }
 
-      // Import questions for each assessment
-      let successCount = 0;
-      let errorCount = 0;
+      // Import questions for the selected assessment
+      await importQuestionsAPI(selectedAssessmentSlug, questions);
       
-      for (const data of questionsData) {
-        try {
-          await importQuestionsAPI(data.slug, data.questions);
-          successCount++;
-        } catch (err: any) {
-          console.error(`Failed to import questions for ${data.slug}:`, err);
-          errorCount++;
-        }
-      }
-
-      if (successCount > 0) {
-        toast({
-          title: 'Import Successful',
-          description: `Successfully imported questions for ${successCount} assessment(s)${errorCount > 0 ? `. ${errorCount} failed.` : ''}`,
-        });
-        dispatch(fetchAssessments()); // Refresh the list
-        setImportDialogOpen(false);
-        setSelectedFile(null);
-      } else {
-        throw new Error('Failed to import questions for all assessments');
-      }
+      toast({
+        title: 'Import Successful',
+        description: `Successfully imported ${questions.length} question(s)`,
+      });
+      dispatch(fetchAssessments()); // Refresh the list
+      setImportDialogOpen(false);
+      setSelectedFile(null);
+      setSelectedAssessmentSlug('');
     } catch (err: any) {
       toast({
         title: 'Import Failed',
@@ -346,10 +324,27 @@ export const AssessmentsList = () => {
 							Import Questions from CSV
 						</DialogTitle>
 						<DialogDescription>
-							Upload a CSV file to import questions. The CSV should have columns: assessment_slug, question_order, question_text, question_type, required, voice_script, option1, option2, etc.
+							Select an assessment and upload a CSV file to import questions.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-2">
+								Select Assessment
+							</label>
+							<Select value={selectedAssessmentSlug} onValueChange={setSelectedAssessmentSlug}>
+								<SelectTrigger className="w-full border-2 border-gray-300 focus:border-blue-500">
+									<SelectValue placeholder="Choose an assessment..." />
+								</SelectTrigger>
+								<SelectContent>
+									{list.map((assessment) => (
+										<SelectItem key={assessment._id} value={assessment.slug}>
+											{assessment.title}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						<div>
 							<label className="block text-sm font-medium text-gray-700 mb-2">
 								Select CSV File
@@ -369,10 +364,9 @@ export const AssessmentsList = () => {
 						<div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3">
 							<p className="text-xs text-blue-900 font-semibold mb-1">CSV Format:</p>
 							<ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
-								<li>assessment_slug: The slug of the assessment</li>
 								<li>question_order: Order number (1, 2, 3...)</li>
 								<li>question_text: The question text</li>
-								<li>question_type: yes-no, this-that, multiple-choice, rating, desires, pain-avoidance.</li>
+								<li>question_type: yes-no, this-that, multiple-choice, rating, desires, pain-avoidance</li>
 								<li>required: TRUE or FALSE</li>
 								<li>voice_script: Voice script for the question</li>
 								<li>option1, option2, ...: Options (as many as needed)</li>
@@ -385,6 +379,7 @@ export const AssessmentsList = () => {
 							onClick={() => {
 								setImportDialogOpen(false);
 								setSelectedFile(null);
+								setSelectedAssessmentSlug('');
 							}}
 							disabled={importing}
 						>
@@ -392,7 +387,7 @@ export const AssessmentsList = () => {
 						</Button>
 						<Button
 							onClick={handleImport}
-							disabled={!selectedFile || importing}
+							disabled={!selectedFile || !selectedAssessmentSlug || importing}
 							className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
 						>
 							{importing ? 'Importing...' : 'Import Questions'}

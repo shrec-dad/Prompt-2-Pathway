@@ -42,7 +42,7 @@ app.use(
     verify: (req, res, buf) => {
       req.rawBody = buf;
     },
-    limit: "50mb",
+    limit: "100mb",
   })
 );
 
